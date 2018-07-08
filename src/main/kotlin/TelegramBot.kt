@@ -169,7 +169,7 @@ class TelegramBot(val vx: Vertx, val httpClient: HttpClient,
                     .append(chatId)
                     .append("&text=")
                     .append(encode(text))
-            replyTo?.let { sb.append("reply_to_message_id=").append(it) }
+            replyTo?.let { sb.append("&reply_to_message_id=").append(it) }
             httpClient.get(port, host, sb.toString())
                     .handler(completionHandler)
                     .exceptionHandler { completionHandler.handle(null) }
