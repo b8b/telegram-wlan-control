@@ -70,7 +70,7 @@ jar {
     manifest {
         attributes["Implementation-Title"] = project.name
         attributes["Implementation-Version"] = version
-        attributes["Main-Class"] = "UplinkMonsterBot"
+        attributes["Main-Class"] = "WlanControlBotKt"
         attributes["Class-Path"] = configurations.compile.collect {
             it.getName()
         }.join(" ")
