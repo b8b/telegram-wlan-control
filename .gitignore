@@ -1,0 +1,11 @@
+/build
+/.gradle
+
+/*.iml
+/.idea
+
+/out
+
+/token.txt
+/wlan_chat_id.txt
+/update.log
