@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
                                     bot.sendMessage(message.chat.id, "Hi! Use /on or /off to control the WLAN")
                                 }
                                 "/on", "/on@UplinkMonsterBot" -> {
-                                    if (message.from in wlanAdmins.map { it.user } ) {
+                                    if (isAdmin) {
                                         currentUser = message.from
                                         currentMessage = message
                                         turnOn = true
