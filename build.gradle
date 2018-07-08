@@ -19,7 +19,7 @@ apply plugin: "application"
 
 sourceCompatibility = 1.8
 
-mainClassName = "WlanControlBot.kt"
+mainClassName = "WlanControlBotKt"
 
 repositories {
     mavenLocal()
