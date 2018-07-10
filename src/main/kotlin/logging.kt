@@ -31,6 +31,7 @@ fun configureLogging() {
     console.context = lc
     console.name = "console"
     console.encoder = encoder
+    console.isImmediateFlush = true
     console.start()
 
     rootLogger.detachAndStopAllAppenders()

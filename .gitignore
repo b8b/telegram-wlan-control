@@ -6,6 +6,5 @@
 
 /out
 
-/token.txt
-/wlan_chat_id.txt
+/telegram-wlan-control.conf
 /update.log

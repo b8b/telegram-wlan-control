@@ -1,14 +1,22 @@
 import io.vertx.core.Vertx
 import io.vertx.kotlin.core.VertxOptions
 import io.vertx.kotlin.core.http.HttpClientOptions
-import io.vertx.kotlin.coroutines.awaitResult
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.toList
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.FileInputStream
+import java.util.*
+
+private fun ERR(msg: String): Nothing {
+    System.err.println(msg)
+    System.exit(1)
+    throw IllegalStateException()
+}
 
 fun main(args: Array<String>) {
     System.setProperty(
@@ -19,10 +27,20 @@ fun main(args: Array<String>) {
 
     val log = LoggerFactory.getLogger("main")
 
-    val token = File("token.txt").readText(Charsets.UTF_8).trim()
-    val wlanChat = File("wlan_chat_id.txt").readText(Charsets.UTF_8).trim().toInt()
+    val argsMap = args.map { it.split('=', limit = 2) }.map { it.first() to it.lastOrNull() }.toMap()
+    val configFileName = argsMap["-config"] ?: "telegram-wlan-control.conf"
 
-    val updateLogFile = File("update.log")
+    val config = Properties().also {
+        FileInputStream(configFileName).use { `in` ->
+            it.load(`in`)
+        }
+    }
+
+    val token = (config.getProperty("token") ?: ERR("no token configured")).trim()
+    val wlanChat = (config.getProperty("chatId") ?: ERR("no chatId configured")).trim().toInt()
+
+    val localStateDir = File(System.getProperty("localStateDir") ?: ".")
+    val updateLogFile = File(localStateDir, "update.log")
 
     val vx = Vertx.vertx(VertxOptions(
             blockedThreadCheckInterval = 10_000L,
@@ -45,43 +63,48 @@ fun main(args: Array<String>) {
             var turnOff = false
 
             while (keepRunning) {
-                for (update in bot.getUpdates()) {
-                    val message = update.message
-                    if (message?.chat?.id == wlanChat) {
-                        if (message.from == null) {
-                            bot.sendMessage(message.chat.id, "hello stranger", message.messageId)
-                        } else {
-                            val isAdmin = message.from in wlanAdmins.map { it.user }
-                            when (message.text) {
-                                "/start" -> {
-                                    bot.sendMessage(message.chat.id, "Hi! Use /on or /off to control the WLAN")
-                                }
-                                "/on", "/on@UplinkMonsterBot" -> {
-                                    if (isAdmin) {
+                try {
+                    for (update in bot.getUpdates()) {
+                        val message = update.message
+                        if (message?.chat?.id == wlanChat) {
+                            if (message.from == null) {
+                                bot.sendMessage(message.chat.id, "hello stranger", message.messageId)
+                            } else {
+                                val isAdmin = message.from in wlanAdmins.map { it.user }
+                                when (message.text) {
+                                    "/start" -> {
+                                        bot.sendMessage(message.chat.id, "Hi! Use /on or /off to control the WLAN")
+                                    }
+                                    "/on", "/on@UplinkMonsterBot" -> {
+                                        if (isAdmin) {
+                                            currentUser = message.from
+                                            currentMessage = message
+                                            turnOn = true
+                                            turnOff = false
+                                        } else {
+                                            bot.sendMessage(message.chat.id, "Hope dies last!", message.messageId)
+                                        }
+                                    }
+                                    "/off", "/off@UplinkMonsterBot" -> {
                                         currentUser = message.from
                                         currentMessage = message
-                                        turnOn = true
-                                        turnOff = false
-                                    } else {
-                                        bot.sendMessage(message.chat.id, "Hope dies last!", message.messageId)
+                                        turnOff = true
+                                        turnOn = false
                                     }
                                 }
-                                "/off", "/off@UplinkMonsterBot" -> {
-                                    currentUser = message.from
-                                    currentMessage = message
-                                    turnOff = true
-                                    turnOn = false
-                                }
                             }
+                        } else {
+                            log.info("ignored update #${update.updateId}: chatId != $wlanChat")
                         }
-                    } else {
-                        log.info("ignored update #${update.updateId}: chatId != $wlanChat")
                     }
+                } catch (ex: Exception) {
+                    log.warn("error while processing updates: ${ex.message}", ex)
+                    delay(10_000)
                 }
                 if (turnOff) {
                     val rc = async(CommonPool) {
                         try {
-                            spawn("wlan-control", "off").process.waitFor()
+                            spawn("/etc/wlan-control", "off").process.waitFor()
                         } catch(ex: Throwable) {
                             log.warn("error turning off WLAN: $ex")
                             1
@@ -95,7 +118,7 @@ fun main(args: Array<String>) {
                 } else if (turnOn) {
                     val rc = async(CommonPool) {
                         try {
-                            spawn("wlan-control", "on").process.waitFor()
+                            spawn("/etc/wlan-control", "on").process.waitFor()
                         } catch (ex: Throwable) {
                             log.warn("error turning on WLAN: $ex")
                             1
@@ -110,11 +133,8 @@ fun main(args: Array<String>) {
                 turnOn = false
                 turnOff = false
             }
-            awaitResult<Void> {
-                vx.close(it)
-            }
         }
+    }.invokeOnCompletion {
+        vx.close()
     }
 }
-
-
