@@ -70,11 +70,11 @@ fun main(args: Array<String>) {
                                 bot.sendMessage(message.chat.id, "hello stranger", message.messageId)
                             } else {
                                 val isAdmin = message.from in wlanAdmins.map { it.user }
-                                when (message.text) {
+                                when (message.text?.substringBefore("@")?.toLowerCase()) {
                                     "/start" -> {
                                         bot.sendMessage(message.chat.id, "Hi! Use /on or /off to control the WLAN")
                                     }
-                                    "/on", "/on@UplinkMonsterBot" -> {
+                                    "/on" -> {
                                         if (isAdmin) {
                                             currentUser = message.from
                                             currentMessage = message
@@ -84,7 +84,7 @@ fun main(args: Array<String>) {
                                             bot.sendMessage(message.chat.id, "Hope dies last!", message.messageId)
                                         }
                                     }
-                                    "/off", "/off@UplinkMonsterBot" -> {
+                                    "/off" -> {
                                         currentUser = message.from
                                         currentMessage = message
                                         turnOff = true
