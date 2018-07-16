@@ -15,12 +15,9 @@ version '1.0-SNAPSHOT'
 
 apply plugin: "java"
 apply plugin: "kotlin"
-apply plugin: "application"
-apply plugin: 'org.cikit.daemon'
+apply plugin: "org.cikit.makefile"
 
 sourceCompatibility = 1.8
-
-mainClassName = "WlanControlBotKt"
 
 repositories {
     mavenLocal()
@@ -78,22 +75,9 @@ jar {
     }
 }
 
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
-}
+makefile {
+    user = "root"
+    group = "wheel"
 
-daemon {
-    daemonUser = "root"
-    daemonGroup = "wheel"
-
-    jvmArgs += " -Dvertx.cacheDirBase=@LOCALSTATEDIR@/vertx"
-}
-
-distributions {
-    main {
-        contents {
-            from("README.md")
-            from("telegram-wlan-control.conf.sample")
-        }
-    }
+    jvmArgs += '-Dvertx.cacheDirBase=$(LOCALSTATEDIR)/vertx'
 }

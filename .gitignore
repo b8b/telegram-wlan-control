@@ -6,5 +6,6 @@
 
 /out
 
+/Makefile
 /telegram-wlan-control.conf
 /update.log
