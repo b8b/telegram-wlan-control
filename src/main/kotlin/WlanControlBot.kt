@@ -19,21 +19,20 @@ private fun ERR(msg: String): Nothing {
 }
 
 fun main(args: Array<String>) {
+    val argsMap = args
+            .map { it.split('=', limit = 2) }
+            .map { it.first() to it.lastOrNull() }
+            .toMap()
     System.setProperty(
             io.vertx.core.logging.LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME,
             io.vertx.core.logging.SLF4JLogDelegateFactory::class.java.name)
     LoggerFactory.getLogger(io.vertx.core.logging.LoggerFactory::class.java)
-    configureLogging()
-
+    configureLogging(argsMap["--log-level"]?.toInt() ?: 0)
     val log = LoggerFactory.getLogger("main")
 
-    val argsMap = args.map { it.split('=', limit = 2) }.map { it.first() to it.lastOrNull() }.toMap()
-    val configFileName = argsMap["-config"] ?: "telegram-wlan-control.conf"
-
-    val config = Properties().also {
-        FileInputStream(configFileName).use { `in` ->
-            it.load(`in`)
-        }
+    val configFileName = argsMap["--config"] ?: "telegram-wlan-control.conf"
+    val config = Properties().also { config ->
+        FileInputStream(configFileName).use(config::load)
     }
 
     val token = (config.getProperty("token") ?: ERR("no token configured")).trim()
@@ -46,13 +45,13 @@ fun main(args: Array<String>) {
             blockedThreadCheckInterval = 10_000L,
             eventLoopPoolSize = 1))
 
-    val client = vx.createHttpClient(HttpClientOptions(
+    val httpClient = vx.createHttpClient(HttpClientOptions(
             ssl = true,
             maxPoolSize = 4,
             logActivity = true))
 
     launch(vx.dispatcher()) {
-        TelegramBot(vx, client, token, updateLogFile).use { bot ->
+        TelegramClient(vx, httpClient, token, updateLogFile).use { bot ->
             val wlanAdmins = bot.getChatAdministrators(wlanChat).toList()
             log.info("wlan admins: ${wlanAdmins.map { it.user.firstName }}")
 

@@ -8,17 +8,17 @@ import ch.qos.logback.core.encoder.LayoutWrappingEncoder
 import io.netty.handler.logging.LoggingHandler
 import org.slf4j.LoggerFactory
 
-fun configureLogging() {
+fun configureLogging(logLevel: Int = 0) {
     val lc = LoggerFactory.getILoggerFactory() as LoggerContext
     val rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME)
     rootLogger.level = Level.INFO
 
-//    lc.getLogger(LoggingHandler::class.java).level = Level.DEBUG
-    lc.getLogger(TelegramBot::class.java).level = Level.DEBUG
+    if (logLevel >= 100) lc.getLogger(LoggingHandler::class.java).level = Level.DEBUG
+    if (logLevel >= 10) lc.getLogger(TelegramClient::class.java).level = Level.DEBUG
 
     val layout = PatternLayout()
 
-    layout.pattern = "%d{\"yyyy-MM-dd'T'HH:mm:ss.SSSXXX\"} %thread: %level %logger{36} - %msg%n"
+    layout.pattern = "%d{\"yyyy-MM-dd'T'HH:mm:ss.SSSXXX\"} %thread %level %logger{15} %msg%n"
     layout.context = lc
     layout.start()
 

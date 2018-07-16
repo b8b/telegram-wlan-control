@@ -21,15 +21,15 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URLEncoder
 
-class TelegramBot(val vx: Vertx,
-                  val httpClient: HttpClient,
-                  val token: String,
-                  val updateLogFile: File,
-                  val port: Int = 443,
-                  val host: String = "api.telegram.org",
-                  val pollTimeout: Int = 70) : Closeable {
+class TelegramClient(val vx: Vertx,
+                     val httpClient: HttpClient,
+                     val token: String,
+                     val updateLogFile: File,
+                     val port: Int = 443,
+                     val host: String = "api.telegram.org",
+                     val pollTimeout: Int = 70) : Closeable {
 
-    private val log = LoggerFactory.getLogger("TelegramBot")
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val om = jacksonObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
