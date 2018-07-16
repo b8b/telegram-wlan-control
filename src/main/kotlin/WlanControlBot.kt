@@ -12,7 +12,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.*
 
-private fun ERR(msg: String): Nothing {
+private fun err(msg: String): Nothing {
     System.err.println(msg)
     System.exit(1)
     throw IllegalStateException()
@@ -35,8 +35,8 @@ fun main(args: Array<String>) {
         FileInputStream(configFileName).use(config::load)
     }
 
-    val token = (config.getProperty("token") ?: ERR("no token configured")).trim()
-    val wlanChat = (config.getProperty("chatId") ?: ERR("no chatId configured")).trim().toInt()
+    val token = (config.getProperty("token") ?: err("no token configured")).trim()
+    val wlanChat = (config.getProperty("chatId") ?: err("no chatId configured")).trim().toInt()
 
     val localStateDir = File(System.getProperty("localStateDir") ?: ".")
     val updateLogFile = File(localStateDir, "update.log")

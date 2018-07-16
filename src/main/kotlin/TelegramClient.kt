@@ -21,13 +21,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URLEncoder
 
-class TelegramClient(val vx: Vertx,
-                     val httpClient: HttpClient,
-                     val token: String,
-                     val updateLogFile: File,
-                     val port: Int = 443,
-                     val host: String = "api.telegram.org",
-                     val pollTimeout: Int = 70) : Closeable {
+class TelegramClient(private val vx: Vertx,
+                     private val httpClient: HttpClient,
+                     private val token: String,
+                     private val updateLogFile: File,
+                     private val port: Int = 443,
+                     private val host: String = "api.telegram.org",
+                     private val pollTimeout: Int = 70) : Closeable {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
