@@ -1,28 +1,19 @@
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.core.async.ByteArrayFeeder
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.vertx.core.Vertx
-import io.vertx.core.buffer.Buffer
-import io.vertx.core.http.HttpClient
-import io.vertx.core.http.HttpMethod
-import io.vertx.core.logging.LoggerFactory
-import io.vertx.core.streams.ReadStream
-import io.vertx.kotlin.core.http.RequestOptions
-import io.vertx.kotlin.coroutines.dispatcher
-import io.vertx.kotlin.coroutines.toChannel
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
-import kotlinx.coroutines.experimental.channels.sendBlocking
-import kotlinx.coroutines.experimental.channels.single
 import org.apache.commons.io.input.ReversedLinesFileReader
+import org.http4k.client.JavaHttpClient
+import org.http4k.core.HttpHandler
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLEncoder
 
-class TelegramClient(private val vx: Vertx,
-                     private val httpClient: HttpClient,
+class TelegramClient(private val client: HttpHandler,
                      private val token: String,
                      private val updateLogFile: File,
                      private val port: Int = 443,
@@ -51,8 +42,6 @@ class TelegramClient(private val vx: Vertx,
 
     private val updateLog = FileOutputStream(updateLogFile, true)
 
-    private val requestOptions = RequestOptions(host, port, true)
-
     override fun close() {
         updateLog.close()
     }
@@ -61,112 +50,86 @@ class TelegramClient(private val vx: Vertx,
         return URLEncoder.encode(input, "UTF-8")
     }
 
-    private inline fun <reified T> readJsonResponse(vx: Vertx, readChannel: ReceiveChannel<Buffer>) = produce<T>(vx.dispatcher()) {
-        try {
-            val p = om.factory.createNonBlockingByteArrayParser()
-            val objBuffer = JsonObjectBuffer()
-            var st = 0
+    private fun readJson(p: JsonParser) {
+        var ok = false
+        var error = 0
+        var description: String? = null
 
-            var ok = false
-            var error = 0
-            var description: String? = null
-
-            parse@ while (true) {
-                val token = p.nextToken()
-                when (token) {
-                    null -> {
-                        //EOF
-                        break@parse
+        parse@ while (true) {
+            val token = p.nextToken()
+            when (token) {
+                null -> {
+                    //EOF
+                    break@parse
+                }
+                JsonToken.FIELD_NAME -> when (p.currentName) {
+                    "ok" -> {
+                        ok = p.nextBooleanValue()
                     }
-                    JsonToken.NOT_AVAILABLE -> {
-                        with(p.nonBlockingInputFeeder as ByteArrayFeeder) {
-                            val buffer = readChannel.receiveOrNull()
-                            if (buffer == null) {
-                                endOfInput()
-                            } else {
-                                val bytes = buffer.bytes
-                                feedInput(bytes, 0, bytes.size)
-                            }
-                        }
+                    "error_code" -> {
+                        error = p.nextIntValue(-1)
                     }
-                    else -> when (st) {
-                        0 -> {
-                            if (token == JsonToken.FIELD_NAME) when (p.currentName) {
-                                "ok" -> {
-                                    ok = p.nextBooleanValue()
-                                }
-                                "error_code" -> {
-                                    error = p.nextIntValue(-1)
-                                }
-                                "description" -> {
-                                    description = p.nextTextValue()
-                                }
-                                "result" -> {
-                                    st = 1
-                                }
-                            }
-                        }
-                        1 -> {
-                            objBuffer.processEvent(p)?.let {
-                                sendBlocking(om.readValue(it.asParserOnFirstToken(), T::class.java))
-                            }
-                        }
+                    "description" -> {
+                        description = p.nextTextValue()
+                    }
+                    "result" -> {
+                        return
                     }
                 }
+                else -> {
+                }
             }
+        }
 
-            if (!ok) close(RuntimeException("received error $error from telegram: $description"))
-        } finally {
-            if (!readChannel.isClosedForReceive) readChannel.cancel()
+        if (!ok) throw RuntimeException("received error $error from telegram: $description")
+        throw java.lang.RuntimeException("no result in payload")
+    }
+
+    private inline fun <reified T> req(uri: String): T {
+        val resp = client(Request(Method.GET, "https://$host:$port/bot$token$uri"))
+        if (!resp.status.successful) throw RuntimeException("request failed: ${resp.status}")
+        val p = om.factory.createParser(resp.body.stream)
+        readJson(p)
+        p.nextToken()
+        return om.readValue(p, T::class.java)
+    }
+
+    private inline fun <reified T> reqSequence(uri: String): Sequence<T> {
+        val resp = client(Request(Method.GET, "https://$host:$port/bot$token$uri"))
+        if (!resp.status.successful) throw RuntimeException("request failed: ${resp.status}")
+        val p = om.factory.createParser(resp.body.stream)
+        readJson(p)
+        return if (p.nextToken() == JsonToken.START_ARRAY) {
+            om.readValues<T>(p, T::class.java).asSequence()
+        } else {
+            sequenceOf(om.readValue(p, T::class.java))
         }
     }
 
-    suspend fun getMe(): User {
-        val resp = httpClient.request(vx, HttpMethod.GET, requestOptions.setURI("/bot$token/getMe")).awaitResponse()
-        val readChannel = (resp as ReadStream<Buffer>).toChannel(vx)
-        if (resp.statusCode() != 200) throw RuntimeException("invalid status code: ${resp.statusCode()}")
-        return readJsonResponse<User>(vx, readChannel).single()
-    }
+    fun getMe(): User = req("/getMe")
 
-    suspend fun getUpdates(): ReceiveChannel<Update> {
+    fun getUpdates(): Sequence<Update> {
         val sb = StringBuilder("/getUpdates?timeout=").append(pollTimeout)
         lastUpdate?.let { sb.append("&offset=").append(it.updateId.inc()) }
-        log.debug("GET $sb")
-        val resp = httpClient.request(vx, HttpMethod.GET, requestOptions.setURI("/bot$token$sb")).awaitResponse()
-        if (resp.statusCode() != 200) throw RuntimeException("invalid status code: ${resp.statusCode()}")
-        val readChannel = (resp as ReadStream<Buffer>).toChannel(vx)
-        val updates = readJsonResponse<Update>(vx, readChannel)
-        return produce(vx.dispatcher()) {
-            try {
-                for (update in updates) {
-                    updateLog.write(updateWriter.writeValueAsBytes(update))
-                    updateLog.write('\n'.toByte().toInt())
-                    lastUpdate = update
-                    sendBlocking(update)
-                }
-            } finally {
-                if (!readChannel.isClosedForReceive) readChannel.cancel()
-            }
+        return reqSequence<Update>(sb.toString()).map { update ->
+            updateLog.write(updateWriter.writeValueAsBytes(update))
+            updateLog.write('\n'.toByte().toInt())
+            lastUpdate = update
+            update
         }
     }
 
-    suspend fun getChatAdministrators(chatId: Int): ReceiveChannel<ChatMember> {
-        val resp = httpClient.request(vx, HttpMethod.GET, requestOptions
-                .setURI("/bot$token/getChatAdministrators?chat_id=$chatId")).awaitResponse()
-        if (resp.statusCode() != 200) throw RuntimeException("invalid status code: ${resp.statusCode()}")
-        val readChannel = (resp as ReadStream<Buffer>).toChannel(vx)
-        return readJsonResponse(vx, readChannel)
-    }
+    fun getChatAdministrators(chatId: Int): Sequence<ChatMember> =
+        reqSequence("/getChatAdministrators?chat_id=$chatId")
 
-    suspend fun sendMessage(chatId: Int, text: String, replyTo: Int? = null): Message {
+    fun sendMessage(chatId: Int, text: String, replyTo: Int? = null): Message {
         val sb = StringBuilder("/sendMessage?chat_id=")
                 .append(chatId)
                 .append("&text=")
                 .append(encode(text))
         replyTo?.let { sb.append("&reply_to_message_id=").append(it) }
-        val resp = httpClient.request(vx, HttpMethod.GET, requestOptions.setURI("/bot$token$sb")).awaitResponse()
-        val readChannel = (resp as ReadStream<Buffer>).toChannel(vx)
-        if (resp.statusCode() != 200) throw RuntimeException("invalid status code: ${resp.statusCode()}")
-        return readJsonResponse<Message>(vx, readChannel).single()
+        return req(sb.toString())
     }
+
 }
+

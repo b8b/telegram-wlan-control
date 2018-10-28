@@ -1,14 +1,14 @@
-
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.SendChannel
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.CoroutineContext
 
 sealed class StdinSource
 object StdinInherit : StdinSource()
@@ -91,7 +91,7 @@ private suspend fun ReceiveChannel<ByteBuffer>.copyToStream(out: OutputStream) {
             }
         }
     } catch (ex: Throwable) {
-        cancel(ex)
+        cancel()
     }
 }
 
@@ -140,7 +140,7 @@ fun spawnForReading(vararg args: String,
                     env: Map<String, String> = emptyMap(),
                     stdin: StdinSource = StdinInherit,
                     stderr: StderrTarget = StderrInherit,
-                    pool: CoroutineContext = CommonPool): SpawnedReadableProcess {
+                    pool: CoroutineContext = Dispatchers.Default): SpawnedReadableProcess {
     val pb = ProcessBuilder(*args)
     if (wd != null) pb.directory(wd)
     if (env.isNotEmpty()) pb.environment().putAll(env)
@@ -150,7 +150,7 @@ fun spawnForReading(vararg args: String,
     if (stdin === StdinClose) process.outputStream.close()
     if (stderr === StderrClose) process.errorStream.close()
     val stdOutChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         process.inputStream.copyToChannel(stdOutChannel)
     }
     return object: SpawnedReadableProcess {
@@ -164,7 +164,7 @@ fun spawnForWriting(vararg args: String,
                     env: Map<String, String> = emptyMap(),
                     stdout: StdoutTarget = StdoutInherit,
                     stderr: StderrTarget = StderrInherit,
-                    pool: CoroutineContext = CommonPool): SpawnedWritableProcess {
+                    pool: CoroutineContext = Dispatchers.Default): SpawnedWritableProcess {
     val pb = ProcessBuilder(*args)
     if (wd != null) pb.directory(wd)
     if (env.isNotEmpty()) pb.environment().putAll(env)
@@ -174,7 +174,7 @@ fun spawnForWriting(vararg args: String,
     if (stderr === StderrClose) process.errorStream.close()
     if (stdout === StdoutClose) process.inputStream.close()
     val stdInChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         stdInChannel.copyToStream(process.outputStream)
     }
     return object: SpawnedWritableProcess {
@@ -187,7 +187,7 @@ fun spawn2(vararg args: String,
            wd: File? = null,
            env: Map<String, String> = emptyMap(),
            stderr: StderrTarget = StderrInherit,
-           pool: CoroutineContext = CommonPool): SpawnedProcess2 {
+           pool: CoroutineContext = Dispatchers.Default): SpawnedProcess2 {
     val pb = ProcessBuilder(*args)
     if (wd != null) pb.directory(wd)
     if (env.isNotEmpty()) pb.environment().putAll(env)
@@ -195,11 +195,11 @@ fun spawn2(vararg args: String,
     val process = pb.start()
     if (stderr === StderrClose) process.errorStream.close()
     val stdInChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         stdInChannel.copyToStream(process.outputStream)
     }
     val stdOutChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         process.inputStream.copyToChannel(stdOutChannel)
     }
     return object: SpawnedProcess2 {
@@ -212,21 +212,21 @@ fun spawn2(vararg args: String,
 fun spawn3(vararg args: String,
            wd: File? = null,
            env: Map<String, String> = emptyMap(),
-           pool: CoroutineContext = CommonPool): SpawnedProcess3 {
+           pool: CoroutineContext = Dispatchers.Default): SpawnedProcess3 {
     val sb = ProcessBuilder(*args)
     if (wd != null) sb.directory(wd)
     if (env.isNotEmpty()) sb.environment().putAll(env)
     val process = sb.start()
     val stdInChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         stdInChannel.copyToStream(process.outputStream)
     }
     val stdOutChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         process.inputStream.copyToChannel(stdOutChannel)
     }
     val stdErrChannel = Channel<ByteBuffer>()
-    launch(pool) {
+    GlobalScope.launch(pool) {
         process.errorStream.copyToChannel(stdErrChannel)
     }
     return object: SpawnedProcess3 {

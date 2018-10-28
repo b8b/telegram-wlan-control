@@ -41,7 +41,6 @@ open class MakefileExtension(project: Project) {
                 sysConfDir = "/etc"
                 dataDir = "$(PREFIX)"
                 localStateDir = "/var/lib/$(NAME)"
-
             }
         }
     }

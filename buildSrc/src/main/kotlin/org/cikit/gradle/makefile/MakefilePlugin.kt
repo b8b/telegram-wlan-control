@@ -11,7 +11,7 @@ class MakefilePlugin : Plugin<Project> {
         project!!
         val ex = project.extensions.create("makefile", MakefileExtension::class.java, project)
 
-        val jar = project.getTasks().getAt(JavaPlugin.JAR_TASK_NAME);
+        val jar = project.getTasks().getAt(JavaPlugin.JAR_TASK_NAME)
 
         val copyDependenciesTask = project.tasks.create("copyDependencies", Sync::class.java)
         copyDependenciesTask.description = "Copy dependencies into build folder."

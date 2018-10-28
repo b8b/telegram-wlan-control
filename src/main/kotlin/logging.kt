@@ -5,7 +5,6 @@ import ch.qos.logback.classic.PatternLayout
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.ConsoleAppender
 import ch.qos.logback.core.encoder.LayoutWrappingEncoder
-import io.netty.handler.logging.LoggingHandler
 import org.slf4j.LoggerFactory
 
 fun configureLogging(logLevel: Int = 0) {
@@ -13,7 +12,6 @@ fun configureLogging(logLevel: Int = 0) {
     val rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME)
     rootLogger.level = Level.INFO
 
-    if (logLevel >= 100) lc.getLogger(LoggingHandler::class.java).level = Level.DEBUG
     if (logLevel >= 10) lc.getLogger(TelegramClient::class.java).level = Level.DEBUG
 
     val layout = PatternLayout()
