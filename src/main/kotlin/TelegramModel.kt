@@ -1,198 +1,219 @@
-import com.fasterxml.jackson.annotation.JsonProperty
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class User(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("first_name") val firstName: String? = null,
-        @JsonProperty("last_name") val lastName: String? = null,
-        @JsonProperty("username") val username: String? = null,
-        @JsonProperty("is_bot") val bot: Boolean = false,
-        @JsonProperty("language_code") val languageCode: String? = null
+        @SerialName("id") val id: Int,
+        @SerialName("first_name") val firstName: String? = null,
+        @SerialName("last_name") val lastName: String? = null,
+        @SerialName("username") val username: String? = null,
+        @SerialName("is_bot") val bot: Boolean = false,
+        @SerialName("language_code") val languageCode: String? = null
 )
 
+@Serializable
 data class Chat(
-        @JsonProperty("id") val id: Int,
-        @JsonProperty("type") val type: String? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("username") val username: String? = null,
-        @JsonProperty("first_name") val firstName: String? = null,
-        @JsonProperty("last_name") val lastName: String? = null,
-        @JsonProperty("all_members_are_administrators") val allAdmins: Boolean? = null
+        @SerialName("id") val id: Int,
+        @SerialName("type") val type: String? = null,
+        @SerialName("title") val title: String? = null,
+        @SerialName("username") val username: String? = null,
+        @SerialName("first_name") val firstName: String? = null,
+        @SerialName("last_name") val lastName: String? = null,
+        @SerialName("all_members_are_administrators") val allAdmins: Boolean? = null
 )
 
+@Serializable
 data class Audio(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("duration") val duration: Int? = null,
-        @JsonProperty("performer") val performer: String? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("mime_type") val mimeType: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("duration") val duration: Int? = null,
+        @SerialName("performer") val performer: String? = null,
+        @SerialName("title") val title: String? = null,
+        @SerialName("mime_type") val mimeType: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class PhotoSize(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("width") val width: Int? = null,
-        @JsonProperty("height") val height: Int? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("width") val width: Int? = null,
+        @SerialName("height") val height: Int? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Document(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("thumb") val thumb: PhotoSize? = null,
-        @JsonProperty("file_name") val fileName: String? = null,
-        @JsonProperty("mime_type") val mimeType: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("thumb") val thumb: PhotoSize? = null,
+        @SerialName("file_name") val fileName: String? = null,
+        @SerialName("mime_type") val mimeType: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Animation(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("thumb") val thumb: PhotoSize? = null,
-        @JsonProperty("file_name") val fileName: String? = null,
-        @JsonProperty("mime_type") val mimeType: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("thumb") val thumb: PhotoSize? = null,
+        @SerialName("file_name") val fileName: String? = null,
+        @SerialName("mime_type") val mimeType: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Game(
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("description") val description: String? = null,
-        @JsonProperty("photo") val photo: List<PhotoSize>? = null,
-        @JsonProperty("text") val text: String? = null,
-        @JsonProperty("text_entities") val textEntities: List<MessageEntity>? = null,
-        @JsonProperty("animation") val animation: Animation? = null
+        @SerialName("title") val title: String? = null,
+        @SerialName("description") val description: String? = null,
+        @SerialName("photo") val photo: List<PhotoSize>? = null,
+        @SerialName("text") val text: String? = null,
+        @SerialName("text_entities") val textEntities: List<MessageEntity>? = null,
+        @SerialName("animation") val animation: Animation? = null
 )
 
+@Serializable
 data class Sticker(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("width") val width: Int? = null,
-        @JsonProperty("height") val height: Int? = null,
-        @JsonProperty("thumb") val thumb: PhotoSize? = null,
-        @JsonProperty("emoji") val emoji: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("width") val width: Int? = null,
+        @SerialName("height") val height: Int? = null,
+        @SerialName("thumb") val thumb: PhotoSize? = null,
+        @SerialName("emoji") val emoji: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Video(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("width") val width: Int? = null,
-        @JsonProperty("height") val height: Int? = null,
-        @JsonProperty("duration") val duration: Int? = null,
-        @JsonProperty("thumb") val thumb: PhotoSize? = null,
-        @JsonProperty("mime_type") val mimeType: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("width") val width: Int? = null,
+        @SerialName("height") val height: Int? = null,
+        @SerialName("duration") val duration: Int? = null,
+        @SerialName("thumb") val thumb: PhotoSize? = null,
+        @SerialName("mime_type") val mimeType: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class VideoNote(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("length") val length: Int? = null,
-        @JsonProperty("duration") val duration: Int? = null,
-        @JsonProperty("thumb") val thumb: PhotoSize? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("length") val length: Int? = null,
+        @SerialName("duration") val duration: Int? = null,
+        @SerialName("thumb") val thumb: PhotoSize? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Voice(
-        @JsonProperty("file_id") val fileId: String? = null,
-        @JsonProperty("duration") val duration: Int? = null,
-        @JsonProperty("mime_type") val mimeType: String? = null,
-        @JsonProperty("file_size") val fileSize: Int? = null
+        @SerialName("file_id") val fileId: String? = null,
+        @SerialName("duration") val duration: Int? = null,
+        @SerialName("mime_type") val mimeType: String? = null,
+        @SerialName("file_size") val fileSize: Int? = null
 )
 
+@Serializable
 data class Contact(
-        @JsonProperty("phone_number") val phoneNumber: String? = null,
-        @JsonProperty("first_name") val firstName: String? = null,
-        @JsonProperty("last_name") val lastName: String? = null,
-        @JsonProperty("user_id") val userId: Int? = null
+        @SerialName("phone_number") val phoneNumber: String? = null,
+        @SerialName("first_name") val firstName: String? = null,
+        @SerialName("last_name") val lastName: String? = null,
+        @SerialName("user_id") val userId: Int? = null
 )
 
+@Serializable
 data class Location(
-        @JsonProperty("longitude") val longitude: Double? = null,
-        @JsonProperty("latitude") val latitude: Double? = null
+        @SerialName("longitude") val longitude: Double? = null,
+        @SerialName("latitude") val latitude: Double? = null
 )
 
+@Serializable
 data class Venue(
-        @JsonProperty("location") val location: Location? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("address") val address: String? = null,
-        @JsonProperty("foursquare_id") val foursquareId: String? = null
+        @SerialName("location") val location: Location? = null,
+        @SerialName("title") val title: String? = null,
+        @SerialName("address") val address: String? = null,
+        @SerialName("foursquare_id") val foursquareId: String? = null
 )
 
+@Serializable
 data class Invoice(
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("description") val description: String? = null,
-        @JsonProperty("start_parameter") val startParameter: String? = null,
-        @JsonProperty("currency") val currency: String? = null,
-        @JsonProperty("total_amount") val totalAmount: Int? = null
+        @SerialName("title") val title: String? = null,
+        @SerialName("description") val description: String? = null,
+        @SerialName("start_parameter") val startParameter: String? = null,
+        @SerialName("currency") val currency: String? = null,
+        @SerialName("total_amount") val totalAmount: Int? = null
 )
 
+@Serializable
 data class ShippingAddress(
-        @JsonProperty("country_code") val countryCode: String? = null,
-        @JsonProperty("state") val state: String? = null,
-        @JsonProperty("city") val city: String? = null,
-        @JsonProperty("street_line1") val streetLine1: String? = null,
-        @JsonProperty("street_line2") val streetLine2: String? = null,
-        @JsonProperty("post_code") val postCode: String? = null
+        @SerialName("country_code") val countryCode: String? = null,
+        @SerialName("state") val state: String? = null,
+        @SerialName("city") val city: String? = null,
+        @SerialName("street_line1") val streetLine1: String? = null,
+        @SerialName("street_line2") val streetLine2: String? = null,
+        @SerialName("post_code") val postCode: String? = null
 )
 
+@Serializable
 data class OrderInfo(
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("phone_number") val phoneNumber: String? = null,
-        @JsonProperty("email") val email: String? = null,
-        @JsonProperty("shipping_address") val shippingAddress: ShippingAddress? = null
+        @SerialName("name") val name: String? = null,
+        @SerialName("phone_number") val phoneNumber: String? = null,
+        @SerialName("email") val email: String? = null,
+        @SerialName("shipping_address") val shippingAddress: ShippingAddress? = null
 )
 
+@Serializable
 data class SuccessfulPayment(
-        @JsonProperty("currency") val currency: String? = null,
-        @JsonProperty("total_amount") val totalAmount: Int? = null,
-        @JsonProperty("invoice_payload") val invoicePayload: String? = null,
-        @JsonProperty("shipping_option_id") val shippingOptionId: String? = null,
-        @JsonProperty("order_info") val orderInfo: OrderInfo? = null,
-        @JsonProperty("telegram_payment_charge_id") val telegramPaymentChargeId: String? = null,
-        @JsonProperty("provider_payment_charge_id") val providerPaymentChargeId: String? = null
+        @SerialName("currency") val currency: String? = null,
+        @SerialName("total_amount") val totalAmount: Int? = null,
+        @SerialName("invoice_payload") val invoicePayload: String? = null,
+        @SerialName("shipping_option_id") val shippingOptionId: String? = null,
+        @SerialName("order_info") val orderInfo: OrderInfo? = null,
+        @SerialName("telegram_payment_charge_id") val telegramPaymentChargeId: String? = null,
+        @SerialName("provider_payment_charge_id") val providerPaymentChargeId: String? = null
 )
 
+@Serializable
 data class MessageEntity(
-        @JsonProperty("type") val type: String? = null,
-        @JsonProperty("offset") val offset: Int? = null,
-        @JsonProperty("length") val length: Int? = null,
-        @JsonProperty("url") val url: String? = null,
-        @JsonProperty("user") val user: User? = null
+        @SerialName("type") val type: String? = null,
+        @SerialName("offset") val offset: Int? = null,
+        @SerialName("length") val length: Int? = null,
+        @SerialName("url") val url: String? = null,
+        @SerialName("user") val user: User? = null
 )
 
+@Serializable
 data class Message(
-        @JsonProperty("message_id") val messageId: Int,
-        @JsonProperty("from") val from: User? = null,
-        @JsonProperty("date") val date: Int? = null,
-        @JsonProperty("chat") val chat: Chat? = null,
-        @JsonProperty("forward_from") val forwardFrom: User? = null,
-        @JsonProperty("forward_from_chat") val forwardFromChat: Chat? = null,
-        @JsonProperty("forward_from_message_id") val forwardFromMessageId: Int? = null,
-        @JsonProperty("forward_date") val forwardDate: Int? = null,
-        @JsonProperty("reply_to_message") val replyToMessage: Message? = null,
-        @JsonProperty("edit_date") val editDate: Int? = null,
-        @JsonProperty("text") val text: String? = null,
-        @JsonProperty("entities") val entities: List<MessageEntity>? = null,
-        @JsonProperty("audio") val audio: Audio? = null,
-        @JsonProperty("document") val document: Document? = null,
-        @JsonProperty("game") val game: Game? = null,
-        @JsonProperty("photo") val photo: List<PhotoSize>? = null,
-        @JsonProperty("sticker") val sticker: Sticker? = null,
-        @JsonProperty("video") val video: Video? = null,
-        @JsonProperty("video_note") val videoNote: VideoNote? = null,
-        @JsonProperty("voice") val voice: Voice? = null,
-        @JsonProperty("caption") val caption: String? = null,
-        @JsonProperty("contact") val contact: Contact? = null,
-        @JsonProperty("location") val location: Location? = null,
-        @JsonProperty("venue") val venue: Venue? = null,
-        @JsonProperty("new_chat_members") val newChatMembers: List<User>? = null,
-        @JsonProperty("left_chat_member") val leftChatMember: User? = null,
-        @JsonProperty("new_chat_title") val newChatTitle: String? = null,
-        @JsonProperty("new_chat_photo") val newChatPhoto: List<PhotoSize>? = null,
-        @JsonProperty("delete_chat_photo") val deleteChatPhoto: Boolean? = null,
-        @JsonProperty("group_chat_created") val groupChatCreated: Boolean? = null,
-        @JsonProperty("supergroup_chat_created") val supergroupChatCreated: Boolean? = null,
-        @JsonProperty("channel_chat_created") val channelChatCreated: Boolean? = null,
-        @JsonProperty("migrate_to_chat_id") val migrateToChatId: Int? = null,
-        @JsonProperty("migrate_from_chat_id") val migrateFromChatId: Int? = null,
-        @JsonProperty("pinned_message") val pinnedMessage: Message? = null,
-        @JsonProperty("invoice") val invoice: Invoice? = null,
-        @JsonProperty("successful_payment") val successfulPayment: SuccessfulPayment? = null
+        @SerialName("message_id") val messageId: Int,
+        @SerialName("from") val from: User? = null,
+        @SerialName("date") val date: Int? = null,
+        @SerialName("chat") val chat: Chat? = null,
+        @SerialName("forward_from") val forwardFrom: User? = null,
+        @SerialName("forward_from_chat") val forwardFromChat: Chat? = null,
+        @SerialName("forward_from_message_id") val forwardFromMessageId: Int? = null,
+        @SerialName("forward_date") val forwardDate: Int? = null,
+        @SerialName("reply_to_message") val replyToMessage: Message? = null,
+        @SerialName("edit_date") val editDate: Int? = null,
+        @SerialName("text") val text: String? = null,
+        @SerialName("entities") val entities: List<MessageEntity>? = null,
+        @SerialName("audio") val audio: Audio? = null,
+        @SerialName("document") val document: Document? = null,
+        @SerialName("game") val game: Game? = null,
+        @SerialName("photo") val photo: List<PhotoSize>? = null,
+        @SerialName("sticker") val sticker: Sticker? = null,
+        @SerialName("video") val video: Video? = null,
+        @SerialName("video_note") val videoNote: VideoNote? = null,
+        @SerialName("voice") val voice: Voice? = null,
+        @SerialName("caption") val caption: String? = null,
+        @SerialName("contact") val contact: Contact? = null,
+        @SerialName("location") val location: Location? = null,
+        @SerialName("venue") val venue: Venue? = null,
+        @SerialName("new_chat_members") val newChatMembers: List<User>? = null,
+        @SerialName("left_chat_member") val leftChatMember: User? = null,
+        @SerialName("new_chat_title") val newChatTitle: String? = null,
+        @SerialName("new_chat_photo") val newChatPhoto: List<PhotoSize>? = null,
+        @SerialName("delete_chat_photo") val deleteChatPhoto: Boolean? = null,
+        @SerialName("group_chat_created") val groupChatCreated: Boolean? = null,
+        @SerialName("supergroup_chat_created") val supergroupChatCreated: Boolean? = null,
+        @SerialName("channel_chat_created") val channelChatCreated: Boolean? = null,
+        @SerialName("migrate_to_chat_id") val migrateToChatId: Int? = null,
+        @SerialName("migrate_from_chat_id") val migrateFromChatId: Int? = null,
+        @SerialName("pinned_message") val pinnedMessage: Message? = null,
+        @SerialName("invoice") val invoice: Invoice? = null,
+        @SerialName("successful_payment") val successfulPayment: SuccessfulPayment? = null
 )
 
 class InlineQuery
@@ -202,26 +223,28 @@ class CallbackQuery
 class ShippingQuery
 class PreCheckoutQuery
 
+@Serializable
 data class Update(
-        @JsonProperty("update_id") val updateId: Int,
-        @JsonProperty("message") val message: Message?,
-        @JsonProperty("edited_message") val editedMessage: Message?,
-        @JsonProperty("channel_post") val channelPost: Message?,
-        @JsonProperty("edited_channel_post") val editedChannelPost: Message?,
-        @JsonProperty("inline_query") val inlineQuery: InlineQuery?,
-        @JsonProperty("chosen_inline_result") val chosenInlineResult: ChosenInlineResult?,
-        @JsonProperty("callback_query") val callbackQuery: CallbackQuery?,
-        @JsonProperty("shipping_query") val shippingQuery: ShippingQuery?,
-        @JsonProperty("pre_checkout_query") val preCheckoutQuery: PreCheckoutQuery?
+        @SerialName("update_id") val updateId: Int,
+        @SerialName("message") val message: Message?,
+        @SerialName("edited_message") val editedMessage: Message?,
+        @SerialName("channel_post") val channelPost: Message?,
+        @SerialName("edited_channel_post") val editedChannelPost: Message?,
+        @SerialName("inline_query") val inlineQuery: InlineQuery?,
+        @SerialName("chosen_inline_result") val chosenInlineResult: ChosenInlineResult?,
+        @SerialName("callback_query") val callbackQuery: CallbackQuery?,
+        @SerialName("shipping_query") val shippingQuery: ShippingQuery?,
+        @SerialName("pre_checkout_query") val preCheckoutQuery: PreCheckoutQuery?
 )
 
+@Serializable
 data class ChatMember(
         val user: User,
         val status: String,
-        @JsonProperty("can_be_edited") val canBeEdited: Boolean,
-        @JsonProperty("can_change_info") val canChangeInfo: Boolean,
-        @JsonProperty("can_delete_messages") val canDeleteMessages: Boolean,
-        @JsonProperty("can_invite_users") val canInviteUsers: Boolean,
-        @JsonProperty("can_restrict_members") val canRestrictMembers: Boolean,
-        @JsonProperty("can_promote_members") val canPromoteMembers: Boolean
+        @SerialName("can_be_edited") val canBeEdited: Boolean,
+        @SerialName("can_change_info") val canChangeInfo: Boolean,
+        @SerialName("can_delete_messages") val canDeleteMessages: Boolean,
+        @SerialName("can_invite_users") val canInviteUsers: Boolean,
+        @SerialName("can_restrict_members") val canRestrictMembers: Boolean,
+        @SerialName("can_promote_members") val canPromoteMembers: Boolean
 )

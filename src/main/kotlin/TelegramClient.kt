@@ -1,20 +1,15 @@
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.serialization.json.JSON
 import org.apache.commons.io.input.ReversedLinesFileReader
-import org.http4k.client.JavaHttpClient
-import org.http4k.core.HttpHandler
-import org.http4k.core.Method
-import org.http4k.core.Request
 import org.slf4j.LoggerFactory
-import java.io.Closeable
-import java.io.File
-import java.io.FileOutputStream
+import java.io.*
+import java.net.URL
 import java.net.URLEncoder
 
-class TelegramClient(private val client: HttpHandler,
-                     private val token: String,
+class TelegramClient(private val token: String,
                      private val updateLogFile: File,
                      private val port: Int = 443,
                      private val host: String = "api.telegram.org",
@@ -22,17 +17,12 @@ class TelegramClient(private val client: HttpHandler,
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private val om = jacksonObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-    private val updateWriter = om.writerFor(Update::class.java)
-
     private var lastUpdate: Update? = if (!updateLogFile.exists()) null else {
         val lastLine = ReversedLinesFileReader(updateLogFile, Charsets.UTF_8).use {
             it.readLine()?.trim() ?: ""
         }
         if (lastLine.isNotEmpty()) {
-            val update = om.readValue(lastLine, Update::class.java)
+            val update = JSON.parse(Update.serializer(), lastLine)
             log.info("starting at offset ${update.updateId.inc()}")
             update
         } else {
@@ -50,7 +40,30 @@ class TelegramClient(private val client: HttpHandler,
         return URLEncoder.encode(input, "UTF-8")
     }
 
-    private fun readJson(p: JsonParser) {
+    private fun copySubTree(p: JsonParser, dest: JsonGenerator) {
+        var depth = 0
+        while (true) {
+            val t = p.currentToken
+            when (t) {
+                JsonToken.START_OBJECT, JsonToken.START_ARRAY -> {
+                    depth++
+                }
+                JsonToken.END_OBJECT, JsonToken.END_ARRAY -> {
+                    depth--
+                }
+                else -> {}
+            }
+            if (depth < 0) break
+            dest.copyCurrentEvent(p)
+            p.nextToken()
+            if (depth == 0) break
+        }
+        dest.flush()
+    }
+
+    private fun readJson(resp: InputStream): Sequence<String> {
+        val p = JsonFactory().createParser(resp)
+
         var ok = false
         var error = 0
         var description: String? = null
@@ -73,7 +86,23 @@ class TelegramClient(private val client: HttpHandler,
                         description = p.nextTextValue()
                     }
                     "result" -> {
-                        return
+                        val nextToken = p.nextToken()
+                        val w = StringWriter()
+                        val j = JsonFactory().createGenerator(w)
+                        if (nextToken == JsonToken.START_ARRAY) {
+                            return generateSequence {
+                                if (p.nextToken() == JsonToken.END_ARRAY)
+                                    return@generateSequence null
+                                copySubTree(p, j)
+                                val result = w.toString()
+                                w.buffer.setLength(0)
+                                result
+                            }.constrainOnce()
+                        } else {
+                            copySubTree(p, j)
+                            j.flush()
+                            return sequenceOf(w.toString())
+                        }
                     }
                 }
                 else -> {
@@ -85,34 +114,20 @@ class TelegramClient(private val client: HttpHandler,
         throw java.lang.RuntimeException("no result in payload")
     }
 
-    private inline fun <reified T> req(uri: String): T {
-        val resp = client(Request(Method.GET, "https://$host:$port/bot$token$uri"))
-        if (!resp.status.successful) throw RuntimeException("request failed: ${resp.status}")
-        val p = om.factory.createParser(resp.body.stream)
-        readJson(p)
-        p.nextToken()
-        return om.readValue(p, T::class.java)
-    }
-
-    private inline fun <reified T> reqSequence(uri: String): Sequence<T> {
-        val resp = client(Request(Method.GET, "https://$host:$port/bot$token$uri"))
-        if (!resp.status.successful) throw RuntimeException("request failed: ${resp.status}")
-        val p = om.factory.createParser(resp.body.stream)
-        readJson(p)
-        return if (p.nextToken() == JsonToken.START_ARRAY) {
-            om.readValues<T>(p, T::class.java).asSequence()
-        } else {
-            sequenceOf(om.readValue(p, T::class.java))
+    private fun req(uri: String): Sequence<String> {
+        URL("https://$host:$port/bot$token$uri").openStream().use { resp ->
+            return readJson(resp)
         }
     }
 
-    fun getMe(): User = req("/getMe")
+    fun getMe(): User = JSON.parse(User.serializer(), req("/getMe").single())
 
     fun getUpdates(): Sequence<Update> {
         val sb = StringBuilder("/getUpdates?timeout=").append(pollTimeout)
         lastUpdate?.let { sb.append("&offset=").append(it.updateId.inc()) }
-        return reqSequence<Update>(sb.toString()).map { update ->
-            updateLog.write(updateWriter.writeValueAsBytes(update))
+        return req(sb.toString()).map {
+            val update = JSON.parse(Update.serializer(), it)
+            updateLog.write(it.toByteArray(Charsets.UTF_8))
             updateLog.write('\n'.toByte().toInt())
             lastUpdate = update
             update
@@ -120,7 +135,9 @@ class TelegramClient(private val client: HttpHandler,
     }
 
     fun getChatAdministrators(chatId: Int): Sequence<ChatMember> =
-        reqSequence("/getChatAdministrators?chat_id=$chatId")
+        req("/getChatAdministrators?chat_id=$chatId").map {
+            JSON.parse(ChatMember.serializer(), it)
+        }
 
     fun sendMessage(chatId: Int, text: String, replyTo: Int? = null): Message {
         val sb = StringBuilder("/sendMessage?chat_id=")
@@ -128,7 +145,7 @@ class TelegramClient(private val client: HttpHandler,
                 .append("&text=")
                 .append(encode(text))
         replyTo?.let { sb.append("&reply_to_message_id=").append(it) }
-        return req(sb.toString())
+        return JSON.parse(Message.serializer(), req(sb.toString()).single())
     }
 
 }

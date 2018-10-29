@@ -1,4 +1,3 @@
-import org.http4k.client.JavaHttpClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
@@ -31,7 +30,7 @@ fun main(args: Array<String>) {
     val localStateDir = File(System.getProperty("localStateDir") ?: ".")
     val updateLogFile = File(localStateDir, "update.log")
 
-    TelegramClient(JavaHttpClient(), token, updateLogFile).use { bot ->
+    TelegramClient(token, updateLogFile).use { bot ->
         val wlanAdmins = bot.getChatAdministrators(wlanChat).toList()
         log.info("wlan admins: ${wlanAdmins.map { it.user.firstName }}")
 
