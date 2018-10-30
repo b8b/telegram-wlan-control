@@ -40,7 +40,8 @@ class TelegramClient(private val token: String,
         return URLEncoder.encode(input, "UTF-8")
     }
 
-    private fun copySubTree(p: JsonParser, dest: JsonGenerator) {
+    private fun copySubTree(p: JsonParser, w: StringWriter) {
+        val dest = JsonFactory().createGenerator(w)
         var depth = 0
         while (true) {
             val t = p.currentToken
@@ -88,19 +89,18 @@ class TelegramClient(private val token: String,
                     "result" -> {
                         val nextToken = p.nextToken()
                         val w = StringWriter()
-                        val j = JsonFactory().createGenerator(w)
                         if (nextToken == JsonToken.START_ARRAY) {
+                            p.nextToken()
                             return generateSequence {
-                                if (p.nextToken() == JsonToken.END_ARRAY)
+                                if (p.currentToken() == JsonToken.END_ARRAY)
                                     return@generateSequence null
-                                copySubTree(p, j)
+                                copySubTree(p, w)
                                 val result = w.toString()
                                 w.buffer.setLength(0)
                                 result
                             }.constrainOnce()
                         } else {
-                            copySubTree(p, j)
-                            j.flush()
+                            copySubTree(p, w)
                             return sequenceOf(w.toString())
                         }
                     }
