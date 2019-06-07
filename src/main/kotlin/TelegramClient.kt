@@ -2,7 +2,6 @@ import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
-import kotlinx.serialization.json.JSON
 import org.apache.commons.io.input.ReversedLinesFileReader
 import org.slf4j.LoggerFactory
 import java.io.*
@@ -15,6 +14,7 @@ class TelegramClient(private val token: String,
                      private val host: String = "api.telegram.org",
                      private val pollTimeout: Int = 70) : Closeable {
 
+    private val JSON = kotlinx.serialization.json.JSON.nonstrict
     private val log = LoggerFactory.getLogger(javaClass)
 
     private var lastUpdate: Update? = if (!updateLogFile.exists()) null else {
