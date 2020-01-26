@@ -70,11 +70,13 @@ val jar = tasks.named<Jar>("jar") {
         rename(".*", "pom.xml")
     }
     manifest.attributes.apply {
-        val classpath = configurations["compile"]
+        val classpath = configurations[JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME]
                 .resolvedConfiguration
                 .resolvedArtifacts
-        put("Main-Class", "WlanControlBot")
-        put("Class-Path", classpath.joinToString(" "))
+        put("Main-Class", "WlanControlBotKt")
+        put("Class-Path", project.configurations
+                .findByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+                ?.joinToString(" ") { it.name })
     }
 }.get()
 
