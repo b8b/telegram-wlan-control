@@ -2,11 +2,11 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
+import kotlin.system.exitProcess
 
 private fun err(msg: String): Nothing {
     System.err.println(msg)
-    System.exit(1)
-    throw IllegalStateException()
+    exitProcess(1)
 }
 
 fun main(args: Array<String>) {

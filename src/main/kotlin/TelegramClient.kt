@@ -1,7 +1,8 @@
 import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import org.apache.commons.io.input.ReversedLinesFileReader
 import org.slf4j.LoggerFactory
 import java.io.*
@@ -14,7 +15,7 @@ class TelegramClient(private val token: String,
                      private val host: String = "api.telegram.org",
                      private val pollTimeout: Int = 70) : Closeable {
 
-    private val JSON = kotlinx.serialization.json.JSON.nonstrict
+    private val json = Json(configuration = JsonConfiguration.Stable.copy(strictMode = false))
     private val log = LoggerFactory.getLogger(javaClass)
 
     private var lastUpdate: Update? = if (!updateLogFile.exists()) null else {
@@ -22,7 +23,7 @@ class TelegramClient(private val token: String,
             it.readLine()?.trim() ?: ""
         }
         if (lastLine.isNotEmpty()) {
-            val update = JSON.parse(Update.serializer(), lastLine)
+            val update = json.parse(Update.serializer(), lastLine)
             log.info("starting at offset ${update.updateId.inc()}")
             update
         } else {
@@ -41,25 +42,25 @@ class TelegramClient(private val token: String,
     }
 
     private fun copySubTree(p: JsonParser, w: StringWriter) {
-        val dest = JsonFactory().createGenerator(w)
-        var depth = 0
-        while (true) {
-            val t = p.currentToken
-            when (t) {
-                JsonToken.START_OBJECT, JsonToken.START_ARRAY -> {
-                    depth++
+        JsonFactory().createGenerator(w).use { dest ->
+            var depth = 0
+            while (true) {
+                when (p.currentToken) {
+                    JsonToken.START_OBJECT, JsonToken.START_ARRAY -> {
+                        depth++
+                    }
+                    JsonToken.END_OBJECT, JsonToken.END_ARRAY -> {
+                        depth--
+                    }
+                    else -> {
+                    }
                 }
-                JsonToken.END_OBJECT, JsonToken.END_ARRAY -> {
-                    depth--
-                }
-                else -> {}
+                if (depth < 0) break
+                dest.copyCurrentEvent(p)
+                p.nextToken()
+                if (depth == 0) break
             }
-            if (depth < 0) break
-            dest.copyCurrentEvent(p)
-            p.nextToken()
-            if (depth == 0) break
         }
-        dest.flush()
     }
 
     private fun readJson(resp: InputStream): Sequence<String> {
@@ -70,8 +71,7 @@ class TelegramClient(private val token: String,
         var description: String? = null
 
         parse@ while (true) {
-            val token = p.nextToken()
-            when (token) {
+            when (p.nextToken()) {
                 null -> {
                     //EOF
                     break@parse
@@ -111,7 +111,7 @@ class TelegramClient(private val token: String,
         }
 
         if (!ok) throw RuntimeException("received error $error from telegram: $description")
-        throw java.lang.RuntimeException("no result in payload")
+        throw RuntimeException("no result in payload")
     }
 
     private fun req(uri: String): Sequence<String> {
@@ -120,13 +120,13 @@ class TelegramClient(private val token: String,
         }
     }
 
-    fun getMe(): User = JSON.parse(User.serializer(), req("/getMe").single())
+    fun getMe(): User = json.parse(User.serializer(), req("/getMe").single())
 
     fun getUpdates(): Sequence<Update> {
         val sb = StringBuilder("/getUpdates?timeout=").append(pollTimeout)
         lastUpdate?.let { sb.append("&offset=").append(it.updateId.inc()) }
         return req(sb.toString()).map {
-            val update = JSON.parse(Update.serializer(), it)
+            val update = json.parse(Update.serializer(), it)
             updateLog.write(it.toByteArray(Charsets.UTF_8))
             updateLog.write('\n'.toByte().toInt())
             lastUpdate = update
@@ -136,7 +136,7 @@ class TelegramClient(private val token: String,
 
     fun getChatAdministrators(chatId: Int): Sequence<ChatMember> =
         req("/getChatAdministrators?chat_id=$chatId").map {
-            JSON.parse(ChatMember.serializer(), it)
+            json.parse(ChatMember.serializer(), it)
         }
 
     fun sendMessage(chatId: Int, text: String, replyTo: Int? = null): Message {
@@ -145,7 +145,7 @@ class TelegramClient(private val token: String,
                 .append("&text=")
                 .append(encode(text))
         replyTo?.let { sb.append("&reply_to_message_id=").append(it) }
-        return JSON.parse(Message.serializer(), req(sb.toString()).single())
+        return json.parse(Message.serializer(), req(sb.toString()).single())
     }
 
 }

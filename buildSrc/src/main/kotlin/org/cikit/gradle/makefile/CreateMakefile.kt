@@ -1,6 +1,7 @@
 package org.cikit.gradle.makefile
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -100,7 +101,7 @@ open class CreateMakefile @Inject constructor(config: MakefileExtension) : Defau
         """.trimMargin()
     }
 
-    private fun dependencies() = project.configurations.findByName("compile")?.map { it.name } ?: emptyList<String>()
+    private fun dependencies() = project.configurations.findByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)?.map { it.name } ?: emptyList<String>()
 
     @TaskAction
     fun generateOutputFile() {
